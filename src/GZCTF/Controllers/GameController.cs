@@ -415,7 +415,7 @@ public class GameController(
     /// <param name="token"></param>
     /// <response code="200">Successfully retrieved game events</response>
     /// <response code="400">Game not found</response>
-    [RequireMonitor]
+    [RequireGameMonitor]
     [HttpGet("{id:int}/Events")]
     [ProducesResponseType(typeof(GameEvent[]), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status404NotFound)]
@@ -447,7 +447,7 @@ public class GameController(
     /// <param name="token"></param>
     /// <response code="200">Successfully retrieved game submissions</response>
     /// <response code="400">Game not found</response>
-    [RequireMonitor]
+    [RequireGameMonitor]
     [HttpGet("{id:int}/Submissions")]
     [ProducesResponseType(typeof(Submission[]), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status404NotFound)]
@@ -476,7 +476,7 @@ public class GameController(
     /// <param name="token"></param>
     /// <response code="200">Successfully retrieved game cheat data</response>
     /// <response code="400">Game not found</response>
-    [RequireMonitor]
+    [RequireGameMonitor]
     [HttpGet("{id:int}/CheatInfo")]
     [ProducesResponseType(typeof(CheatInfoModel[]), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status404NotFound)]
@@ -505,7 +505,7 @@ public class GameController(
     /// <param name="token"></param>
     /// <response code="200">Successfully retrieved challenge list</response>
     /// <response code="404">Capture information not found</response>
-    [RequireMonitor]
+    [RequireGameMonitor]
     [HttpGet("Games/{id:int}/Captures")]
     [ProducesResponseType(typeof(ChallengeTrafficModel[]), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetChallengesWithTrafficCapturing([FromRoute] int id, CancellationToken token)
@@ -529,7 +529,7 @@ public class GameController(
     /// <param name="token"></param>
     /// <response code="200">Successfully retrieved file list</response>
     /// <response code="404">Capture information not found</response>
-    [RequireMonitor]
+    [RequireGameMonitor("challengeId", GameIdSource.ChallengeRoute)]
     [HttpGet("Captures/{challengeId:int}")]
     [ProducesResponseType(typeof(TeamTrafficModel[]), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status404NotFound)]
@@ -565,7 +565,7 @@ public class GameController(
     /// <param name="token"></param>
     /// <response code="200">Successfully retrieved file list</response>
     /// <response code="404">Capture information not found</response>
-    [RequireMonitor]
+    [RequireGameMonitor("challengeId", GameIdSource.ChallengeRoute)]
     [HttpGet("Captures/{challengeId:int}/{partId:int}")]
     [ProducesResponseType(typeof(FileRecord[]), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetTeamTraffic([FromRoute] int challengeId, [FromRoute] int partId,
@@ -596,7 +596,7 @@ public class GameController(
     /// <param name="token">Token</param>
     /// <response code="200">Successfully retrieved files</response>
     /// <response code="404">Capture information not found</response>
-    [RequireMonitor]
+    [RequireGameMonitor("challengeId", GameIdSource.ChallengeRoute)]
     [HttpGet("Captures/{challengeId:int}/{partId:int}/All")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult GetAllTeamTraffic([FromRoute] int challengeId, [FromRoute] int partId,
@@ -620,7 +620,7 @@ public class GameController(
     /// <param name="token"></param>
     /// <response code="200">Successfully deleted files</response>
     /// <response code="404">Capture information not found</response>
-    [RequireMonitor]
+    [RequireGameMonitor("challengeId", GameIdSource.ChallengeRoute)]
     [HttpDelete("Captures/{challengeId:int}/{partId:int}/All")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> DeleteAllTeamTraffic([FromRoute] int challengeId, [FromRoute] int partId,
@@ -652,7 +652,7 @@ public class GameController(
     /// <param name="token"></param>
     /// <response code="200">Successfully retrieved file</response>
     /// <response code="404">Capture information not found</response>
-    [RequireMonitor]
+    [RequireGameMonitor("challengeId", GameIdSource.ChallengeRoute)]
     [HttpGet("Captures/{challengeId:int}/{partId:int}/{filename}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status404NotFound)]
@@ -688,7 +688,7 @@ public class GameController(
     /// <param name="token"></param>
     /// <response code="200">Successfully deleted file</response>
     /// <response code="404">Capture information not found</response>
-    [RequireMonitor]
+    [RequireGameMonitor("challengeId", GameIdSource.ChallengeRoute)]
     [HttpDelete("Captures/{challengeId:int}/{partId:int}/{filename}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status404NotFound)]
@@ -794,7 +794,7 @@ public class GameController(
     /// <response code="200">Successfully retrieved game participation information</response>
     /// <response code="400">Invalid operation</response>
     /// <response code="404">Game not found</response>
-    [RequireAdmin]
+    [RequireGameAdmin]
     [HttpGet("{id:int}/Participations")]
     [ProducesResponseType(typeof(ParticipationInfoModel[]), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status400BadRequest)]
@@ -822,7 +822,7 @@ public class GameController(
     /// <response code="200">Successfully downloaded game scoreboard</response>
     /// <response code="400">Invalid operation</response>
     /// <response code="404">Game not found</response>
-    [RequireMonitor]
+    [RequireGameMonitor]
     [HttpGet("{id:int}/ScoreboardSheet")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status400BadRequest)]
@@ -870,7 +870,7 @@ public class GameController(
     /// <response code="200">Successfully downloaded all game submissions</response>
     /// <response code="400">Invalid operation</response>
     /// <response code="404">Game not found</response>
-    [RequireMonitor]
+    [RequireGameMonitor]
     [HttpGet("{id:int}/SubmissionSheet")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status400BadRequest)]
