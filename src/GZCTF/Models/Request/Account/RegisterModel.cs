@@ -34,4 +34,9 @@ public class RegisterModel : ModelWithCaptcha
     [EmailAddress(ErrorMessageResourceName = nameof(Resources.Program.Model_EmailMalformed),
         ErrorMessageResourceType = typeof(Resources.Program))]
     public string Email { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Registration code; required only when the instance's account policy requires one
+    /// </summary>
+    public string? RegistrationCode { get; set; }
 }

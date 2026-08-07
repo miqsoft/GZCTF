@@ -59,6 +59,11 @@ public class AccountPolicy
     /// Email domain list, separated by commas
     /// </summary>
     public string EmailDomainList { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Require a valid registration code for registration
+    /// </summary>
+    public bool RequireRegistrationCode { get; set; }
 }
 
 /// <summary>

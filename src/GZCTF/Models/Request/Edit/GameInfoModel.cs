@@ -25,6 +25,11 @@ public class GameInfoModel
     public bool Hidden { get; set; }
 
     /// <summary>
+    /// Blocks anonymous visitors from seeing this game in the list and detail views
+    /// </summary>
+    public bool RequireLoginToView { get; set; }
+
+    /// <summary>
     /// Game summary
     /// </summary>
     public string Summary { get; set; } = string.Empty;
@@ -116,6 +121,7 @@ public class GameInfoModel
             Summary = game.Summary,
             Content = game.Content,
             Hidden = game.Hidden,
+            RequireLoginToView = game.RequireLoginToView,
             PracticeMode = game.PracticeMode,
             PosterUrl = game.PosterUrl,
             InviteCode = game.InviteCode,

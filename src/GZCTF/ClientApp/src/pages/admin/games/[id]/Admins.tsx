@@ -3,13 +3,14 @@ import { useInputState } from '@mantine/hooks'
 import { showNotification } from '@mantine/notifications'
 import { mdiCheck, mdiClose, mdiDeleteOutline, mdiPlus } from '@mdi/js'
 import { Icon } from '@mdi/react'
+import dayjs from 'dayjs'
 import { FC, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router'
 import { ActionIconWithConfirm } from '@Components/ActionIconWithConfirm'
 import { WithGameEditTab } from '@Components/admin/WithGameEditTab'
 import { showErrorMsg } from '@Utils/Shared'
-import api, { GameAdminInfoModel } from '@Api'
+import api, { GameAdminInfoModel, RegistrationCodeInfoModel } from '@Api'
 import tableClasses from '@Styles/Table.module.css'
 
 const GameAdminManagement: FC = () => {
@@ -23,6 +24,9 @@ const GameAdminManagement: FC = () => {
   const [userName, setUserName] = useInputState('')
   const [granting, setGranting] = useState(false)
 
+  const [codes, setCodes] = useState<RegistrationCodeInfoModel[]>()
+  const [generating, setGenerating] = useState(false)
+
   useEffect(() => {
     if (Number.isNaN(numId) || numId < 0) {
       showNotification({
@@ -35,6 +39,7 @@ const GameAdminManagement: FC = () => {
     }
 
     fetchAdmins()
+    fetchCodes()
   }, [numId])
 
   const fetchAdmins = async () => {
@@ -44,6 +49,44 @@ const GameAdminManagement: FC = () => {
     } catch (e) {
       showErrorMsg(e, t)
     }
+  }
+
+  const fetchCodes = async () => {
+    try {
+      const res = await api.edit.editGetRegistrationCodes(numId)
+      setCodes(res.data)
+    } catch (e) {
+      showErrorMsg(e, t)
+    }
+  }
+
+  const onGenerateCode = async () => {
+    setGenerating(true)
+
+    try {
+      const res = await api.edit.editCreateRegistrationCode(numId)
+      setCodes((prev) => [res.data, ...(prev ?? [])])
+      showNotification({
+        color: 'teal',
+        message: t('admin.notification.games.registration_codes.generated'),
+        icon: <Icon path={mdiCheck} size={1} />,
+      })
+    } catch (e) {
+      showErrorMsg(e, t)
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  const onRevokeCode = async (code: RegistrationCodeInfoModel) => {
+    if (!code.code) return
+    await api.edit.editRevokeRegistrationCode(numId, code.code)
+    setCodes((prev) => (prev ?? []).filter((c) => c.code !== code.code))
+    showNotification({
+      color: 'teal',
+      message: t('admin.notification.games.registration_codes.revoked'),
+      icon: <Icon path={mdiCheck} size={1} />,
+    })
   }
 
   const onGrant = async () => {
@@ -77,7 +120,7 @@ const GameAdminManagement: FC = () => {
     })
   }
 
-  const isLoading = admins === undefined
+  const isLoading = admins === undefined || codes === undefined
 
   return (
     <WithGameEditTab
@@ -101,9 +144,9 @@ const GameAdminManagement: FC = () => {
       }
     >
       <Paper shadow="md" p="md" w="100%">
-        <ScrollArea offsetScrollbars h="calc(100vh - 220px)">
+        <ScrollArea offsetScrollbars h="calc(50vh - 130px)">
           {admins && admins.length === 0 ? (
-            <Center h="calc(100vh - 240px)">
+            <Center h="calc(50vh - 150px)">
               <Stack gap={0} align="center">
                 <Title order={2}>{t('admin.content.games.admins.empty.title')}</Title>
                 <Text>{t('admin.content.games.admins.empty.description')}</Text>
@@ -144,6 +187,54 @@ const GameAdminManagement: FC = () => {
             </Table>
           )}
         </ScrollArea>
+      </Paper>
+      <Paper shadow="md" p="md" w="100%">
+        <Group justify="space-between" mb="sm">
+          <Title order={4}>{t('admin.content.games.registration_codes.title')}</Title>
+          <Button leftSection={<Icon path={mdiPlus} size={1} />} loading={generating} onClick={onGenerateCode}>
+            {t('admin.button.games.registration_codes.generate')}
+          </Button>
+        </Group>
+        {codes && codes.length === 0 ? (
+          <Center h="15vh">
+            <Stack gap={0} align="center">
+              <Title order={2}>{t('admin.content.games.registration_codes.empty.title')}</Title>
+              <Text>{t('admin.content.games.registration_codes.empty.description')}</Text>
+            </Stack>
+          </Center>
+        ) : (
+          <Table className={tableClasses.table}>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>{t('common.label.code')}</Table.Th>
+                <Table.Th>{t('admin.content.games.registration_codes.created_at')}</Table.Th>
+                <Table.Th />
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {codes?.map((code) => (
+                <Table.Tr key={code.code}>
+                  <Table.Td>
+                    <Text ff="monospace" size="sm" fw="bold">
+                      {code.code}
+                    </Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <Text size="sm">{dayjs(code.createdAtUtc).format('YYYY-MM-DD HH:mm')}</Text>
+                  </Table.Td>
+                  <Table.Td align="right">
+                    <ActionIconWithConfirm
+                      iconPath={mdiDeleteOutline}
+                      color="alert"
+                      message={t('admin.content.games.registration_codes.revoke_confirm', { code: code.code })}
+                      onClick={() => onRevokeCode(code)}
+                    />
+                  </Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        )}
       </Paper>
     </WithGameEditTab>
   )

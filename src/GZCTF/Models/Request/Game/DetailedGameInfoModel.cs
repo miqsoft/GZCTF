@@ -32,6 +32,12 @@ public class DetailedGameInfoModel
     public bool Hidden { get; set; }
 
     /// <summary>
+    /// Whether anonymous visitors are blocked from seeing this game
+    /// </summary>
+    [JsonIgnore]
+    public bool RequireLoginToView { get; set; }
+
+    /// <summary>
     /// List of participation divisions
     /// </summary>
     public HashSet<DivisionInfo>? Divisions { get; set; }
@@ -111,6 +117,7 @@ public class DetailedGameInfoModel
             Id = game.Id,
             Title = game.Title,
             Hidden = game.Hidden,
+            RequireLoginToView = game.RequireLoginToView,
             Summary = game.Summary,
             Content = game.Content,
             PracticeMode = game.PracticeMode,

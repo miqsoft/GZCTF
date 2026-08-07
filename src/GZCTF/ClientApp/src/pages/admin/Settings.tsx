@@ -317,6 +317,20 @@ const Configs: FC = () => {
                 })
               }
             />
+            <Switch
+              checked={accountPolicy?.requireRegistrationCode ?? false}
+              disabled={disabled}
+              label={SwitchLabel(
+                t('admin.content.settings.account.require_registration_code.label'),
+                t('admin.content.settings.account.require_registration_code.description')
+              )}
+              onChange={(e) =>
+                setAccountPolicy({
+                  ...accountPolicy,
+                  requireRegistrationCode: e.currentTarget.checked,
+                })
+              }
+            />
           </SimpleGrid>
           <TextInput
             label={t('admin.content.settings.account.email_domain_list.label')}

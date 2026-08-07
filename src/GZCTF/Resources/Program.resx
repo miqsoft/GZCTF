@@ -167,6 +167,12 @@
   <data name="Account_RegisterNotEnabled" xml:space="preserve">
     <value>Registration has been disabled</value>
   </data>
+  <data name="Account_RegistrationCodeRequired" xml:space="preserve">
+    <value>A registration code is required</value>
+  </data>
+  <data name="Account_RegistrationCodeInvalid" xml:space="preserve">
+    <value>Invalid registration code</value>
+  </data>
   <data name="Account_ResetPasswordFromAdmin" xml:space="preserve">
     <value>Email verification is not enabled, please contact the administrator to reset the password</value>
   </data>

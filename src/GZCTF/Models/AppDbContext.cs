@@ -39,6 +39,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) :
     public DbSet<ExerciseChallenge> ExerciseChallenges { get; set; } = null!;
     public DbSet<UserParticipation> UserParticipations { get; set; } = null!;
     public DbSet<GameAdmin> GameAdmins { get; set; } = null!;
+    public DbSet<RegistrationCode> RegistrationCodes { get; set; } = null!;
     public DbSet<ExerciseDependency> ExerciseDependencies { get; set; } = null!;
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
     public DbSet<ApiToken> ApiTokens { get; set; } = null!;
@@ -445,6 +446,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) :
                 .HasForeignKey(e => e.GameId);
 
             entity.HasKey(e => new { e.UserId, e.GameId });
+        });
+
+        builder.Entity<RegistrationCode>(entity =>
+        {
+            entity.HasOne(e => e.Game)
+                .WithMany()
+                .HasForeignKey(e => e.GameId);
         });
 
         builder.Entity<ApiToken>(entity =>

@@ -37,6 +37,13 @@ public partial class BasicGameInfoModel
     public string? PosterHash { get; set; }
 
     /// <summary>
+    /// Whether anonymous visitors are blocked from seeing this game; used for server-side
+    /// filtering only, never serialized to the client
+    /// </summary>
+    [JsonIgnore]
+    public bool RequireLoginToView { get; set; }
+
+    /// <summary>
     /// Team member limit
     /// </summary>
     [JsonPropertyName("limit")]
@@ -63,6 +70,7 @@ public partial class BasicGameInfoModel
             Title = game.Title,
             Summary = game.Summary,
             PosterHash = game.PosterHash,
+            RequireLoginToView = game.RequireLoginToView,
             StartTimeUtc = game.StartTimeUtc,
             EndTimeUtc = game.EndTimeUtc,
             TeamMemberCountLimit = game.TeamMemberCountLimit

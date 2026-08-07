@@ -90,11 +90,18 @@ public class GameController(
     /// <response code="400">Game not found</response>
     [HttpGet]
     [EnableRateLimiting(nameof(RateLimiter.LimitPolicy.Query))]
-    [ResponseCache(VaryByQueryKeys = ["count", "skip"], Duration = 60)]
+    [ResponseCache(VaryByQueryKeys = ["count", "skip"], VaryByHeader = "Cookie", Duration = 60)]
     [ProducesResponseType(typeof(ArrayResponse<BasicGameInfoModel>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Games([FromQuery][Range(0, 50)] int count = 10,
         [FromQuery] int skip = 0, CancellationToken token = default)
-        => Ok(await gameRepository.GetGameInfo(count, skip, token));
+    {
+        var result = await gameRepository.GetGameInfo(count, skip, token);
+
+        if (User.Identity?.IsAuthenticated is not true)
+            result = new(result.Data.Where(g => !g.RequireLoginToView).ToArray(), result.Total);
+
+        return Ok(result);
+    }
 
     /// <summary>
     /// Get detailed game information
@@ -116,6 +123,10 @@ public class GameController(
         if (gameInfo is null)
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Game_NotFound)],
                 StatusCodes.Status404NotFound));
+
+        if (gameInfo.RequireLoginToView && User.Identity?.IsAuthenticated is not true)
+            return Unauthorized(new RequestResponse(localizer[nameof(Resources.Program.Auth_LoginRequired)],
+                StatusCodes.Status401Unauthorized));
 
         var count = await participationRepository.GetParticipationCount(id, token);
 

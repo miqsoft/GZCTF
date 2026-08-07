@@ -46,6 +46,7 @@
     "password_retype": "Confirm password",
     "phone": "Phone number",
     "real_name": "Real Name",
+    "registration_code": "Registration Code",
     "student_id": "Student ID",
     "username": "Username",
     "username_or_email": "Username or Email"

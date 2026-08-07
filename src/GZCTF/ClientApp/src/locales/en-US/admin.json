@@ -52,7 +52,10 @@
       "delete": "Delete",
       "export": "Export Game",
       "import": "Import Game",
-      "new": "New Game"
+      "new": "New Game",
+      "registration_codes": {
+        "generate": "Generate Code"
+      }
     },
     "notices": {
       "delete": "Delete",
@@ -81,6 +84,15 @@
         },
         "revoke_confirm": "Revoke {{name}}'s admin access to this game?",
         "username_placeholder": "Username"
+      },
+      "registration_codes": {
+        "created_at": "Created",
+        "empty": {
+          "description": "Generate a reusable code that lets anyone register and automatically join this game",
+          "title": "No registration codes yet"
+        },
+        "revoke_confirm": "Revoke registration code {{code}}? Anyone still holding it will no longer be able to register with it.",
+        "title": "Registration Codes"
       },
       "challenges": {
         "attachment": {
@@ -372,6 +384,10 @@
           "description": "List of allowed email domains to register. Separate multiple domains with commas, leave empty to disable.",
           "label": "Email Domain Whitelist"
         },
+        "require_registration_code": {
+          "description": "Require a valid registration code to register a new account",
+          "label": "Require Registration Code"
+        },
         "title": "Account Policy",
         "use_captcha": {
           "description": "Verify on login, registration and recovery",
@@ -455,6 +471,7 @@
   "label": {
     "games": {
       "hide": "Hide",
+      "require_login": "Require Login",
       "summary": "Summary"
     },
     "instances": {
@@ -484,6 +501,10 @@
         "granted": "Access granted",
         "revoked": "Access revoked",
         "user_not_found": "No user found with that username"
+      },
+      "registration_codes": {
+        "generated": "Registration code generated",
+        "revoked": "Registration code revoked"
       },
       "challenges": {
         "attachment": {

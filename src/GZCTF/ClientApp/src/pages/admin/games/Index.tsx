@@ -100,6 +100,32 @@ const Games: FC = () => {
     }
   }
 
+  const onToggleRequireLoginToView = async (game: GameInfoModel) => {
+    if (!game.id) return
+    setDisabled(true)
+
+    try {
+      await api.edit.editUpdateGame(game.id, {
+        ...game,
+        requireLoginToView: !game.requireLoginToView,
+      })
+      if (games) {
+        updateGames(
+          games.map((g) => {
+            if (g.id === game.id) {
+              return { ...g, requireLoginToView: !g.requireLoginToView }
+            }
+            return g
+          })
+        )
+      }
+    } catch (e) {
+      showErrorMsg(e, t)
+    } finally {
+      setDisabled(false)
+    }
+  }
+
   const onImportGame = async (file: File | null) => {
     if (!file) return
 
@@ -209,6 +235,7 @@ const Games: FC = () => {
             <Table.Thead>
               <Table.Tr>
                 <Table.Th miw="1.8rem">{t('admin.label.games.hide')}</Table.Th>
+                <Table.Th miw="1.8rem">{t('admin.label.games.require_login')}</Table.Th>
                 <Table.Th>{t('common.label.game')}</Table.Th>
                 <Table.Th>{t('common.label.time')}</Table.Th>
                 <Table.Th>{t('admin.label.games.summary')}</Table.Th>
@@ -225,6 +252,13 @@ const Games: FC = () => {
                     <Table.Tr key={game.id}>
                       <Table.Td>
                         <Switch disabled={disabled} checked={game.hidden} onChange={() => onToggleHidden(game)} />
+                      </Table.Td>
+                      <Table.Td>
+                        <Switch
+                          disabled={disabled}
+                          checked={game.requireLoginToView}
+                          onChange={() => onToggleRequireLoginToView(game)}
+                        />
                       </Table.Td>
                       <Table.Td>
                         <Group wrap="nowrap" justify="space-between">

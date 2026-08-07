@@ -44,6 +44,12 @@ public partial class Game
     public bool Hidden { get; set; }
 
     /// <summary>
+    /// Whether anonymous visitors are blocked from seeing this game in the list and detail views
+    /// </summary>
+    [Required]
+    public bool RequireLoginToView { get; set; }
+
+    /// <summary>
     /// Whether the game is in practice mode (most operations can still be performed after the game ends)
     /// </summary>
     public bool PracticeMode { get; set; } = true;
@@ -190,6 +196,7 @@ public partial class Game
         Content = model.Content;
         Summary = model.Summary;
         Hidden = model.Hidden;
+        RequireLoginToView = model.RequireLoginToView;
         PracticeMode = model.PracticeMode;
         AcceptWithoutReview = model.AcceptWithoutReview;
         InviteCode = model.InviteCode;

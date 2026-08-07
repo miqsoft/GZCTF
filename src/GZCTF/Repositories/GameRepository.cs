@@ -81,6 +81,7 @@ public class GameRepository(
                 Title = game.Title,
                 Summary = game.Summary,
                 PosterHash = game.PosterHash,
+                RequireLoginToView = game.RequireLoginToView,
                 StartTimeUtc = game.StartTimeUtc,
                 EndTimeUtc = game.EndTimeUtc,
                 TeamMemberCountLimit = game.TeamMemberCountLimit

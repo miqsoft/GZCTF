@@ -194,6 +194,8 @@ export type RegisterModel = ModelWithCaptcha & {
    * @minLength 1
    */
   email: string;
+  /** Registration code; required only when the instance's account policy requires one */
+  registrationCode?: string | null;
 };
 
 export interface ModelWithCaptcha {
@@ -374,6 +376,8 @@ export interface AccountPolicy {
   emailConfirmationRequired?: boolean;
   /** Email domain list, separated by commas */
   emailDomainList?: string;
+  /** Require a valid registration code for registration */
+  requireRegistrationCode?: boolean;
 }
 
 /** Global settings */
@@ -938,6 +942,8 @@ export interface GameInfoModel {
   title: string;
   /** Is hidden */
   hidden?: boolean;
+  /** Blocks anonymous visitors from seeing this game in the list and detail views */
+  requireLoginToView?: boolean;
   /** Game summary */
   summary?: string;
   /** Game detailed description */
@@ -1020,6 +1026,27 @@ export interface GameAdminInfoModel {
   id?: string;
   /** Username */
   userName?: string;
+}
+
+/** A reusable registration code generated for a game (Edit) */
+export interface RegistrationCodeInfoModel {
+  /** The code itself */
+  code?: string;
+  /**
+   * Game ID this code is tied to
+   * @format int32
+   */
+  gameId?: number;
+  /**
+   * ID of the user who generated this code
+   * @format guid
+   */
+  createdByUserId?: string;
+  /**
+   * When this code was generated
+   * @format uint64
+   */
+  createdAtUtc?: number;
 }
 
 /**
@@ -3749,6 +3776,22 @@ export class Api<
       }),
 
     /**
+     * @description Generating a reusable registration code for a game requires global administrator privileges, or scoped admin access to this same game. Registering with this code will also auto-join the registering user to this game
+     *
+     * @tags Edit
+     * @name EditCreateRegistrationCode
+     * @summary Generate Registration Code
+     * @request POST:/api/edit/games/{id}/registrationcodes
+     */
+    editCreateRegistrationCode: (id: number, params: RequestParams = {}) =>
+      this.request<RegistrationCodeInfoModel, RequestResponse>({
+        path: `/api/edit/games/${id}/registrationcodes`,
+        method: "POST",
+        format: "json",
+        ...params,
+      }),
+
+    /**
      * @description Testing a game challenge container requires administrator privileges
      *
      * @tags Edit
@@ -4352,6 +4395,58 @@ export class Api<
     ) => mutate<GameInfoModel[]>(`/api/edit/games/mine`, data, options),
 
     /**
+     * @description Retrieving the registration codes generated for a game requires global administrator privileges, or scoped admin access to this same game
+     *
+     * @tags Edit
+     * @name EditGetRegistrationCodes
+     * @summary Get Registration Codes
+     * @request GET:/api/edit/games/{id}/registrationcodes
+     */
+    editGetRegistrationCodes: (id: number, params: RequestParams = {}) =>
+      this.request<RegistrationCodeInfoModel[], RequestResponse>({
+        path: `/api/edit/games/${id}/registrationcodes`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+    /**
+     * @description Retrieving the registration codes generated for a game requires global administrator privileges, or scoped admin access to this same game
+     *
+     * @tags Edit
+     * @name EditGetRegistrationCodes
+     * @summary Get Registration Codes
+     * @request GET:/api/edit/games/{id}/registrationcodes
+     */
+    useEditGetRegistrationCodes: (
+      id: number,
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<RegistrationCodeInfoModel[], RequestResponse>(
+        doFetch ? `/api/edit/games/${id}/registrationcodes` : null,
+        options,
+      ),
+
+    /**
+     * @description Retrieving the registration codes generated for a game requires global administrator privileges, or scoped admin access to this same game
+     *
+     * @tags Edit
+     * @name EditGetRegistrationCodes
+     * @summary Get Registration Codes
+     * @request GET:/api/edit/games/{id}/registrationcodes
+     */
+    mutateEditGetRegistrationCodes: (
+      id: number,
+      data?: RegistrationCodeInfoModel[] | Promise<RegistrationCodeInfoModel[]>,
+      options?: MutatorOptions,
+    ) =>
+      mutate<RegistrationCodeInfoModel[]>(
+        `/api/edit/games/${id}/registrationcodes`,
+        data,
+        options,
+      ),
+
+    /**
      * @description Granting scoped game admin access requires global administrator privileges, or existing scoped admin access to this same game - letting managers share their own games with other users. A grant is always scoped to this one game; it never confers global privileges or access to any other game
      *
      * @tags Edit
@@ -4507,6 +4602,25 @@ export class Api<
     ) =>
       this.request<void, RequestResponse>({
         path: `/api/edit/games/${id}/admins/${userId}`,
+        method: "DELETE",
+        ...params,
+      }),
+
+    /**
+     * @description Revoking a registration code requires global administrator privileges, or scoped admin access to this same game. A code can only be revoked through the game it is tied to
+     *
+     * @tags Edit
+     * @name EditRevokeRegistrationCode
+     * @summary Revoke Registration Code
+     * @request DELETE:/api/edit/games/{id}/registrationcodes/{code}
+     */
+    editRevokeRegistrationCode: (
+      id: number,
+      code: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, RequestResponse>({
+        path: `/api/edit/games/${id}/registrationcodes/${code}`,
         method: "DELETE",
         ...params,
       }),

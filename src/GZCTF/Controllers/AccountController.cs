@@ -30,6 +30,11 @@ public class AccountController(
     IOptionsSnapshot<GlobalConfig> globalConfig,
     UserManager<UserInfo> userManager,
     SignInManager<UserInfo> signInManager,
+    IGameRepository gameRepository,
+    ITeamRepository teamRepository,
+    IDivisionRepository divisionRepository,
+    IParticipationRepository participationRepository,
+    IRegistrationCodeRepository registrationCodeRepository,
     ILogger<AccountController> logger,
     IStringLocalizer<Program> localizer) : ControllerBase
 {
@@ -59,6 +64,24 @@ public class AccountController(
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Account_AvailableEmailDomain),
                 accountPolicy.Value.EmailDomainList]));
 
+        RegistrationCode? regCode = null;
+        if (string.IsNullOrWhiteSpace(model.RegistrationCode))
+        {
+            if (accountPolicy.Value.RequireRegistrationCode)
+                return BadRequest(
+                    new RequestResponse(localizer[nameof(Resources.Program.Account_RegistrationCodeRequired)]));
+        }
+        else
+        {
+            // A supplied code must resolve regardless of the policy toggle - the policy only
+            // governs whether omitting the field entirely is allowed
+            regCode = await registrationCodeRepository.GetByCode(model.RegistrationCode, token);
+
+            if (regCode is null)
+                return BadRequest(
+                    new RequestResponse(localizer[nameof(Resources.Program.Account_RegistrationCodeInvalid)]));
+        }
+
         var password = configService.DecryptApiData(model.Password);
         if (string.IsNullOrWhiteSpace(password))
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Model_PasswordRequired)]));
@@ -80,6 +103,19 @@ public class AccountController(
                 return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Account_UserExisting)]));
 
             user = current;
+        }
+
+        if (regCode is not null)
+        {
+            try
+            {
+                await AutoJoinGame(user, regCode.GameId, token);
+            }
+            catch (Exception ex)
+            {
+                logger.Log($"Registration-code auto-join failed for game {regCode.GameId}: {ex.Message}", user,
+                    TaskStatus.Failed, LogLevel.Warning);
+            }
         }
 
         if (accountPolicy.Value.ActiveOnRegister)
@@ -133,6 +169,37 @@ public class AccountController(
                || accountPolicy.Value.EmailDomainList
                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                    .Any(d => d.Equals(mailDomain, StringComparison.InvariantCulture));
+    }
+
+    /// <summary>
+    /// Auto-join a newly registered user to the game their registration code is tied to.
+    /// Skipped entirely if the game has joinable divisions requiring an explicit choice - the
+    /// account is still created, and the user can join manually afterward through the normal flow
+    /// </summary>
+    private async Task AutoJoinGame(UserInfo user, int gameId, CancellationToken token)
+    {
+        await using var transaction = await gameRepository.BeginTransactionAsync(token);
+
+        var game = await gameRepository.GetGameById(gameId, token);
+        if (game is null)
+            return;
+
+        var joinableDivisionIds = await divisionRepository.GetJoinableDivisionIds(gameId, token);
+        if (joinableDivisionIds is { Count: > 0 })
+            return;
+
+        var team = await teamRepository.CreateTeam(new() { Name = user.UserName }, user, token);
+
+        Participation part = new() { Game = game, Team = team, Token = gameRepository.GetToken(game, team) };
+        participationRepository.Add(part);
+        part.Members.Add(new(user, game, team));
+
+        await participationRepository.SaveAsync(token);
+
+        if (game.AcceptWithoutReview)
+            await participationRepository.UpdateParticipationStatus(part, ParticipationStatus.Accepted, token);
+
+        await transaction.CommitAsync(token);
     }
 
     /// <summary>

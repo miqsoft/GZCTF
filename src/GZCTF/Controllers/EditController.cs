@@ -40,6 +40,7 @@ public class EditController(
     GameImportService importService,
     IDivisionRepository divisionRepository,
     IGameAdminRepository gameAdminRepository,
+    IRegistrationCodeRepository registrationCodeRepository,
     IStringLocalizer<Program> localizer) : Controller
 {
     /// <summary>
@@ -379,6 +380,81 @@ public class EditController(
 
         if (!revoked)
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Admin_UserNotFound)],
+                StatusCodes.Status404NotFound));
+
+        return Ok();
+    }
+
+    /// <summary>
+    /// Get Registration Codes
+    /// </summary>
+    /// <remarks>
+    /// Retrieving the registration codes generated for a game requires global administrator
+    /// privileges, or scoped admin access to this same game
+    /// </remarks>
+    /// <param name="id"></param>
+    /// <param name="token"></param>
+    /// <response code="200">Successfully retrieved the game's registration codes</response>
+    [RequireGameAdmin]
+    [HttpGet("Games/{id:int}/RegistrationCodes")]
+    [ProducesResponseType(typeof(RegistrationCodeInfoModel[]), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetRegistrationCodes([FromRoute] int id, CancellationToken token) =>
+        Ok((await registrationCodeRepository.GetCodesForGame(id, token))
+            .Select(RegistrationCodeInfoModel.FromRegistrationCode));
+
+    /// <summary>
+    /// Generate Registration Code
+    /// </summary>
+    /// <remarks>
+    /// Generating a reusable registration code for a game requires global administrator
+    /// privileges, or scoped admin access to this same game. Registering with this code will
+    /// also auto-join the registering user to this game
+    /// </remarks>
+    /// <param name="id"></param>
+    /// <param name="token"></param>
+    /// <response code="200">Successfully generated a registration code</response>
+    /// <response code="404">Game not found</response>
+    [RequireGameAdmin]
+    [HttpPost("Games/{id:int}/RegistrationCodes")]
+    [ProducesResponseType(typeof(RegistrationCodeInfoModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> CreateRegistrationCode([FromRoute] int id, CancellationToken token)
+    {
+        var game = await gameRepository.GetGameById(id, token);
+
+        if (game is null)
+            return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Game_NotFound)],
+                StatusCodes.Status404NotFound));
+
+        var creator = await userManager.GetUserAsync(User);
+        var code = await registrationCodeRepository.Create(game, creator!, token);
+
+        return Ok(RegistrationCodeInfoModel.FromRegistrationCode(code));
+    }
+
+    /// <summary>
+    /// Revoke Registration Code
+    /// </summary>
+    /// <remarks>
+    /// Revoking a registration code requires global administrator privileges, or scoped admin
+    /// access to this same game. A code can only be revoked through the game it is tied to
+    /// </remarks>
+    /// <param name="id"></param>
+    /// <param name="code"></param>
+    /// <param name="token"></param>
+    /// <response code="200">Successfully revoked the registration code</response>
+    /// <response code="404">No such code exists for this game</response>
+    [RequireGameAdmin]
+    [HttpDelete("Games/{id:int}/RegistrationCodes/{code}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RevokeRegistrationCode([FromRoute] int id, [FromRoute] string code,
+        CancellationToken token)
+    {
+        var revoked = await registrationCodeRepository.Revoke(code, id, token);
+
+        if (!revoked)
+            return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Game_NotFound)],
                 StatusCodes.Status404NotFound));
 
         return Ok();
