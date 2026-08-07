@@ -75,6 +75,7 @@
     <PackageReference Include="Serilog.Sinks.Grafana.Loki"/>
     <PackageReference Include="Serilog.Sinks.OpenTelemetry"/>
     <PackageReference Include="SkiaSharp"/>
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies"/>
     <PackageReference Include="BouncyCastle.Cryptography"/>
     <PackageReference Include="PacketDotNet"/>
     <PackageReference Include="SharpPcap"/>
