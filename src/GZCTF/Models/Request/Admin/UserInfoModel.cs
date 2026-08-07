@@ -72,6 +72,11 @@ public class UserInfoModel
     /// </summary>
     public bool? EmailConfirmed { get; set; }
 
+    /// <summary>
+    /// Grants self-service game creation and management
+    /// </summary>
+    public bool CanManageGames { get; set; }
+
     internal static UserInfoModel FromUserInfo(UserInfo user) =>
         new()
         {
@@ -87,6 +92,7 @@ public class UserInfoModel
             StdNumber = user.StdNumber,
             LastVisitedUtc = user.LastVisitedUtc,
             RegisterTimeUtc = user.RegisterTimeUtc,
-            EmailConfirmed = user.EmailConfirmed
+            EmailConfirmed = user.EmailConfirmed,
+            CanManageGames = user.CanManageGames
         };
 }

@@ -122,3 +122,41 @@ public class RequireGameMonitorAttribute(string routeParam = "id", GameIdSource 
 /// </summary>
 public class RequireGameAdminAttribute(string routeParam = "id", GameIdSource source = GameIdSource.Route)
     : RequireGameScopedPrivilegeAttribute(Role.Admin, routeParam, source);
+
+/// <summary>
+/// Authorization filter for self-service game creation: grants access to global Admins,
+/// or to any user granted <see cref="UserInfo.CanManageGames" />. Unlike
+/// <see cref="RequireGameScopedPrivilegeAttribute" />, this is not tied to any particular
+/// game (there is no game yet at creation time), so it checks only the global capability.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+public class RequireGameManagerAttribute : Attribute, IAsyncAuthorizationFilter
+{
+    public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
+    {
+        var dbContext = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+        var localizer =
+            context.HttpContext.RequestServices.GetRequiredService<IStringLocalizer<Program>>();
+
+        var id = context.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        UserInfo? user = null;
+
+        if (id is not null && context.HttpContext.User.Identity?.IsAuthenticated is true &&
+            Guid.TryParse(id, out var guid))
+            user = await dbContext.Users.SingleOrDefaultAsync(u => u.Id == guid);
+
+        if (user is null)
+        {
+            context.Result = RequestResponse.Result(localizer[nameof(Resources.Program.Auth_LoginRequired)],
+                StatusCodes.Status401Unauthorized);
+            return;
+        }
+
+        if (user.Role >= Role.Admin || user.CanManageGames)
+            return;
+
+        context.Result = RequestResponse.Result(localizer[nameof(Resources.Program.Auth_AccessForbidden)],
+            StatusCodes.Status403Forbidden);
+    }
+}

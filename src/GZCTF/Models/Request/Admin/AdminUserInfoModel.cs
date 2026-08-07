@@ -60,4 +60,9 @@ public class AdminUserInfoModel
     /// User role
     /// </summary>
     public Role? Role { get; set; }
+
+    /// <summary>
+    /// Grants self-service game creation and management
+    /// </summary>
+    public bool? CanManageGames { get; set; }
 }

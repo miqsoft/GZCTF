@@ -24,6 +24,13 @@ public partial class UserInfo : IdentityUser<Guid>
     public Role Role { get; set; } = Role.User;
 
     /// <summary>
+    /// Grants self-service game creation and management, independent of the global Role
+    /// ladder above: a manager can create their own games and share admin access on them
+    /// with other users, without being a global Admin
+    /// </summary>
+    public bool CanManageGames { get; set; }
+
+    /// <summary>
     /// User's recent IP address
     /// </summary>
     [IPAddressFormatter]
@@ -98,6 +105,7 @@ public partial class UserInfo : IdentityUser<Guid>
         RealName = model.RealName ?? RealName;
         PhoneNumber = model.Phone ?? PhoneNumber;
         EmailConfirmed = model.EmailConfirmed ?? EmailConfirmed;
+        CanManageGames = model.CanManageGames ?? CanManageGames;
     }
 
     /// <summary>

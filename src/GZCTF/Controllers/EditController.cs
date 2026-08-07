@@ -122,12 +122,13 @@ public class EditController(
     /// Add Game
     /// </summary>
     /// <remarks>
-    /// Adding a game requires administrator privileges
+    /// Adding a game requires administrator privileges, or a user granted self-service game
+    /// management; the creator is automatically granted scoped admin access to their own game
     /// </remarks>
     /// <param name="model"></param>
     /// <param name="token"></param>
     /// <response code="200">Successfully added game</response>
-    [RequireAdmin]
+    [RequireGameManager]
     [HttpPost("Games")]
     [ProducesResponseType(typeof(GameInfoModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status400BadRequest)]
@@ -137,6 +138,11 @@ public class EditController(
 
         if (game is null)
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Game_CreationFailed)]));
+
+        var creator = await userManager.GetUserAsync(User);
+
+        if (creator is not null && creator.Role < Role.Admin)
+            await gameAdminRepository.GrantAdmin(game, creator, token);
 
         await cacheHelper.FlushRecentGamesCache(token);
 
@@ -240,14 +246,15 @@ public class EditController(
     /// Check Game Admin
     /// </summary>
     /// <remarks>
-    /// Checking a user's scoped game admin grant requires global administrator privileges
+    /// Checking a user's scoped game admin grant requires global administrator privileges,
+    /// or scoped admin access to this same game
     /// </remarks>
     /// <param name="id"></param>
     /// <param name="userId"></param>
     /// <param name="token"></param>
     /// <response code="200">User is a scoped admin for this game</response>
     /// <response code="404">Game not found, or user is not a scoped admin for this game</response>
-    [RequireAdmin]
+    [RequireGameAdmin]
     [HttpGet("Games/{id:int}/Admins/{userId:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status404NotFound)]
@@ -269,15 +276,17 @@ public class EditController(
     /// Grant Game Admin
     /// </summary>
     /// <remarks>
-    /// Granting scoped game admin access requires global administrator privileges; a scoped
-    /// admin cannot self-escalate or grant access to other users
+    /// Granting scoped game admin access requires global administrator privileges, or existing
+    /// scoped admin access to this same game - letting managers share their own games with
+    /// other users. A grant is always scoped to this one game; it never confers global
+    /// privileges or access to any other game
     /// </remarks>
     /// <param name="id"></param>
     /// <param name="userId"></param>
     /// <param name="token"></param>
     /// <response code="200">Successfully granted scoped game admin access</response>
     /// <response code="404">Game or user not found</response>
-    [RequireAdmin]
+    [RequireGameAdmin]
     [HttpPost("Games/{id:int}/Admins/{userId:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status404NotFound)]
@@ -305,14 +314,15 @@ public class EditController(
     /// Revoke Game Admin
     /// </summary>
     /// <remarks>
-    /// Revoking scoped game admin access requires global administrator privileges
+    /// Revoking scoped game admin access requires global administrator privileges, or existing
+    /// scoped admin access to this same game
     /// </remarks>
     /// <param name="id"></param>
     /// <param name="userId"></param>
     /// <param name="token"></param>
     /// <response code="200">Successfully revoked scoped game admin access</response>
     /// <response code="404">No such grant exists</response>
-    [RequireAdmin]
+    [RequireGameAdmin]
     [HttpDelete("Games/{id:int}/Admins/{userId:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status404NotFound)]

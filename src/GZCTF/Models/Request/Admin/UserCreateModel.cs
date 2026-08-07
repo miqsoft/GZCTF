@@ -62,6 +62,11 @@ public class UserCreateModel
         ErrorMessageResourceType = typeof(Resources.Program))]
     public string? TeamName { get; set; }
 
+    /// <summary>
+    /// Grants self-service game creation and management
+    /// </summary>
+    public bool CanManageGames { get; set; }
+
     internal UserInfo ToUserInfo() =>
         new()
         {
@@ -70,6 +75,7 @@ public class UserCreateModel
             RealName = RealName ?? "",
             StdNumber = StdNumber ?? "",
             PhoneNumber = Phone,
-            EmailConfirmed = true
+            EmailConfirmed = true,
+            CanManageGames = CanManageGames
         };
 }
