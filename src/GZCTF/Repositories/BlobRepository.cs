@@ -2,9 +2,7 @@
 using GZCTF.Repositories.Interface;
 using GZCTF.Storage.Interface;
 using Microsoft.EntityFrameworkCore;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats.Gif;
-using SixLabors.ImageSharp.Processing;
+using SkiaSharp;
 
 namespace GZCTF.Repositories;
 
@@ -68,15 +66,27 @@ public class BlobRepository(AppDbContext context, ILogger<BlobRepository> logger
             {
                 await file.CopyToAsync(tmp, token);
                 tmp.Position = 0;
-                using var image = await Image.LoadAsync(tmp, token);
 
-                if (image.Metadata.DecodedImageFormat is GifFormat)
-                    return await StoreBlob($"{fileName}.gif", tmp, token);
+                using var data = SKData.Create(tmp, (int)tmp.Length);
 
-                if (resize > 0)
-                    image.Mutate(im => im.Resize(resize, 0));
+                using (var codec = SKCodec.Create(data))
+                {
+                    if (codec?.EncodedFormat == SKEncodedImageFormat.Gif)
+                        return await StoreBlob($"{fileName}.gif", tmp, token);
+                }
 
-                await image.SaveAsWebpAsync(webpStream, token);
+                using var bitmap = SKBitmap.Decode(data) ??
+                    throw new InvalidOperationException("Failed to decode image");
+
+                using var resizedBitmap = resize > 0
+                    ? bitmap.Resize(
+                        new SKImageInfo(resize, (int)Math.Round(resize * (double)bitmap.Height / bitmap.Width)),
+                        new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.None))
+                    : null;
+
+                using var image = SKImage.FromBitmap(resizedBitmap ?? bitmap);
+                using var webpData = image.Encode(SKEncodedImageFormat.Webp, 75);
+                webpData.SaveTo(webpStream);
             }
 
             return await StoreBlob($"{fileName}.webp", webpStream, token);

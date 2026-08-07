@@ -74,7 +74,7 @@
     <PackageReference Include="MemoryPack"/>
     <PackageReference Include="Serilog.Sinks.Grafana.Loki"/>
     <PackageReference Include="Serilog.Sinks.OpenTelemetry"/>
-    <PackageReference Include="SixLabors.ImageSharp"/>
+    <PackageReference Include="SkiaSharp"/>
     <PackageReference Include="BouncyCastle.Cryptography"/>
     <PackageReference Include="PacketDotNet"/>
     <PackageReference Include="SharpPcap"/>
