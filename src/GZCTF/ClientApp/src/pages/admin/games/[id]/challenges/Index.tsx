@@ -91,6 +91,7 @@ const GameChallengeEdit: FC = () => {
 
   return (
     <WithGameEditTab
+      allowManager
       headProps={{ justify: 'apart' }}
       isLoading={!challenges}
       head={

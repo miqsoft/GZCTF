@@ -34,7 +34,8 @@ import { GameCreateModal } from '@Components/admin/GameCreateModal'
 import { showErrorMsg } from '@Utils/Shared'
 import { useArrayResponse } from '@Hooks/useArrayResponse'
 import { getGameStatus } from '@Hooks/useGame'
-import api, { GameInfoModel } from '@Api'
+import { useUserRole } from '@Hooks/useUser'
+import api, { GameInfoModel, Role } from '@Api'
 import misc from '@Styles/Misc.module.css'
 import tableClasses from '@Styles/Table.module.css'
 import uploadClasses from '@Styles/Upload.module.css'
@@ -52,6 +53,26 @@ const Games: FC = () => {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const theme = useMantineTheme()
+  const { role } = useUserRole()
+  // Managers (self-service, not global Admin) only ever see their own games via
+  // Games/Mine - the list-all endpoint stays Admin-only.
+  const isManagerOnly = role !== Role.Admin
+
+  const fetchGames = async () => {
+    if (isManagerOnly) {
+      const res = await api.edit.editGetMyGames()
+      setGames({ data: res.data, length: res.data.length, total: res.data.length })
+      setCurrent(res.data.length)
+      return
+    }
+
+    const res = await api.edit.editGetGames({
+      count: ITEM_COUNT_PER_PAGE,
+      skip: (page - 1) * ITEM_COUNT_PER_PAGE,
+    })
+    setGames(res.data)
+    setCurrent((page - 1) * ITEM_COUNT_PER_PAGE + res.data.length)
+  }
 
   const onToggleHidden = async (game: GameInfoModel) => {
     if (!game.id) return
@@ -100,12 +121,7 @@ const Games: FC = () => {
 
       if (res.data) {
         // Refresh the games list
-        const gamesRes = await api.edit.editGetGames({
-          count: ITEM_COUNT_PER_PAGE,
-          skip: (page - 1) * ITEM_COUNT_PER_PAGE,
-        })
-        setGames(gamesRes.data)
-        setCurrent((page - 1) * ITEM_COUNT_PER_PAGE + gamesRes.data.length)
+        await fetchGames()
 
         // Navigate to the imported game
         navigate(`/admin/games/${res.data}/info`)
@@ -118,24 +134,12 @@ const Games: FC = () => {
   }
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await api.edit.editGetGames({
-          count: ITEM_COUNT_PER_PAGE,
-          skip: (page - 1) * ITEM_COUNT_PER_PAGE,
-        })
-        setGames(res.data)
-        setCurrent((page - 1) * ITEM_COUNT_PER_PAGE + res.data.length)
-      } catch (e) {
-        showErrorMsg(e, t)
-      }
-    }
-
-    fetchData()
-  }, [page])
+    fetchGames().catch((e) => showErrorMsg(e, t))
+  }, [page, isManagerOnly])
 
   return (
     <AdminPage
+      allowManager
       isLoading={!games}
       headProps={{ justify: 'apart' }}
       head={
@@ -144,30 +148,35 @@ const Games: FC = () => {
             <Button leftSection={<Icon path={mdiPlus} size={1} />} onClick={() => setCreateOpened(true)}>
               {t('admin.button.games.new')}
             </Button>
-            <FileButton onChange={onImportGame} accept="application/zip">
-              {(props) => (
-                <Button
-                  {...props}
-                  leftSection={<Icon path={mdiUpload} size={1} />}
-                  className={uploadClasses.button}
-                  disabled={disabled}
-                  color={progress !== 0 ? 'cyan' : theme.primaryColor}
-                  variant="outline"
-                >
-                  <div className={uploadClasses.label}>
-                    {progress !== 0 ? t('admin.notification.games.import.importing') : t('admin.button.games.import')}
-                  </div>
-                  {progress !== 0 && (
-                    <Progress
-                      value={progress}
-                      className={uploadClasses.progress}
-                      color={alpha(theme.colors[theme.primaryColor][2], 0.35)}
-                      radius="sm"
-                    />
-                  )}
-                </Button>
-              )}
-            </FileButton>
+            {/* ImportGame stays Admin-only */}
+            {!isManagerOnly && (
+              <FileButton onChange={onImportGame} accept="application/zip">
+                {(props) => (
+                  <Button
+                    {...props}
+                    leftSection={<Icon path={mdiUpload} size={1} />}
+                    className={uploadClasses.button}
+                    disabled={disabled}
+                    color={progress !== 0 ? 'cyan' : theme.primaryColor}
+                    variant="outline"
+                  >
+                    <div className={uploadClasses.label}>
+                      {progress !== 0
+                        ? t('admin.notification.games.import.importing')
+                        : t('admin.button.games.import')}
+                    </div>
+                    {progress !== 0 && (
+                      <Progress
+                        value={progress}
+                        className={uploadClasses.progress}
+                        color={alpha(theme.colors[theme.primaryColor][2], 0.35)}
+                        radius="sm"
+                      />
+                    )}
+                  </Button>
+                )}
+              </FileButton>
+            )}
           </Group>
           <Group w="calc(100% - 9rem)" justify="right">
             <Text fw="bold" size="sm">

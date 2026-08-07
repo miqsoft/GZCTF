@@ -181,6 +181,7 @@ const GameInfoEdit: FC = () => {
 
   return (
     <WithGameEditTab
+      allowManager
       headProps={{ justify: 'apart' }}
       contentPos="right"
       isLoading={!game}

@@ -6,6 +6,12 @@ import { Role } from '@Api'
 
 interface WithRoleProps {
   requiredRole: Role
+  /**
+   * When true, also allow through users granted self-service game management
+   * (UserInfo.CanManageGames), even if their global role is below requiredRole.
+   * Use only on pages that are themselves scoped to a manager's own games.
+   */
+  allowManager?: boolean
   children?: React.ReactNode
 }
 
@@ -19,12 +25,13 @@ export const RoleMap = new Map<Role, number>([
 export const RequireRole = (requiredRole: Role, role?: Role | null) =>
   RoleMap.get(role ?? Role.User)! >= RoleMap.get(requiredRole)!
 
-export const WithRole: FC<WithRoleProps> = ({ requiredRole, children }) => {
-  const { role, error } = useUserRole()
+export const WithRole: FC<WithRoleProps> = ({ requiredRole, allowManager, children }) => {
+  const { role, canManageGames, error } = useUserRole()
   const navigate = useNavigate()
   const location = useLocation()
 
   const required = RoleMap.get(requiredRole)!
+  const isAllowed = (currentRole: Role) => RoleMap.get(currentRole)! >= required || (allowManager && canManageGames)
 
   useEffect(() => {
     if (error && error.status === 401) {
@@ -33,12 +40,10 @@ export const WithRole: FC<WithRoleProps> = ({ requiredRole, children }) => {
 
     if (!role) return
 
-    const current = RoleMap.get(role)!
+    if (!isAllowed(role)) navigate('/404')
+  }, [role, canManageGames, error, required, navigate])
 
-    if (current < required) navigate('/404')
-  }, [role, error, required, navigate])
-
-  if (role && RoleMap.get(role)! < required /* show loader before redirect */) {
+  if (role && !isAllowed(role) /* show loader before redirect */) {
     return (
       <Center h="calc(100vh - 32px)">
         <Loader />

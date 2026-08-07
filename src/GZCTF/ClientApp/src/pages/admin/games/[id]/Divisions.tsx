@@ -106,6 +106,7 @@ const GameDivisionManagement: FC = () => {
 
   return (
     <WithGameEditTab
+      allowManager
       isLoading={isLoading}
       contentPos="flex-end"
       head={

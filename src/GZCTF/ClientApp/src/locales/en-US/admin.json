@@ -40,6 +40,9 @@
       "new": "New Division"
     },
     "games": {
+      "admins": {
+        "grant": "Grant Access"
+      },
       "challenges": {
         "attachment": {
           "batch_add": "Batch Add"
@@ -71,6 +74,14 @@
   },
   "content": {
     "games": {
+      "admins": {
+        "empty": {
+          "description": "Grant access to a user by their username",
+          "title": "No scoped admins yet"
+        },
+        "revoke_confirm": "Revoke {{name}}'s admin access to this game?",
+        "username_placeholder": "Username"
+      },
       "challenges": {
         "attachment": {
           "clear": {
@@ -461,12 +472,19 @@
     },
     "users": {
       "active": "Activate",
+      "can_manage_games": "Self-Service Game Management",
+      "can_manage_games_description": "Lets this user create their own games and share admin access to them with other users, without needing global Admin",
       "last_visit": "Last Visit",
       "role": "User Roles"
     }
   },
   "notification": {
     "games": {
+      "admins": {
+        "granted": "Access granted",
+        "revoked": "Access revoked",
+        "user_not_found": "No user found with that username"
+      },
       "challenges": {
         "attachment": {
           "no_selected": "Please select at least one file",
@@ -595,6 +613,7 @@
   },
   "tab": {
     "games": {
+      "admins": "Admins",
       "challenges": "Challenges",
       "divisions": "Divisions",
       "index": "Games",

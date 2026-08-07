@@ -44,7 +44,7 @@ export const useUser = () => {
 
 export const useUserRole = () => {
   const { user, error } = useUser()
-  return { role: user?.role, error }
+  return { role: user?.role, canManageGames: user?.canManageGames ?? false, error }
 }
 
 export const useTeams = () => {

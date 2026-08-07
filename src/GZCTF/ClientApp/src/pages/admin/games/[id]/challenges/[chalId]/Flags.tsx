@@ -486,6 +486,7 @@ const GameChallengeEdit: FC = () => {
 
   return (
     <WithChallengeEdit
+      allowManager
       isLoading={!challenge}
       headProps={{ justify: 'apart' }}
       backUrl={`/admin/games/${id}/challenges`}

@@ -75,7 +75,7 @@ public class UserInfoModel
     /// <summary>
     /// Grants self-service game creation and management
     /// </summary>
-    public bool CanManageGames { get; set; }
+    public bool? CanManageGames { get; set; }
 
     internal static UserInfoModel FromUserInfo(UserInfo user) =>
         new()

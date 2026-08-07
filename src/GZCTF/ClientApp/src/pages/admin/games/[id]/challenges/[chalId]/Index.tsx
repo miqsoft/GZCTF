@@ -200,6 +200,7 @@ const GameChallengeEdit: FC = () => {
 
   return (
     <WithChallengeEdit
+      allowManager
       isLoading={!challenge}
       contentPos="space-between"
       backUrl={`/admin/games/${id}/challenges`}

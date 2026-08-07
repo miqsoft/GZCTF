@@ -9,6 +9,7 @@ import {
   Radio,
   SimpleGrid,
   Stack,
+  Switch,
   Text,
   Textarea,
   TextInput,
@@ -116,6 +117,13 @@ export const UserEditModal: FC<UserEditModalProps> = (props) => {
             ))}
           </Group>
         </Radio.Group>
+        <Switch
+          label={t('admin.label.users.can_manage_games')}
+          description={t('admin.label.users.can_manage_games_description')}
+          disabled={disabled}
+          checked={profile.canManageGames ?? false}
+          onChange={(event) => setProfile({ ...profile, canManageGames: event.currentTarget.checked })}
+        />
         <SimpleGrid cols={2}>
           <TextInput
             label={t('account.label.email')}

@@ -56,6 +56,7 @@ const GameNoticeEdit: FC = () => {
 
   return (
     <WithGameEditTab
+      allowManager
       headProps={{ justify: 'space-between' }}
       contentPos="right"
       head={

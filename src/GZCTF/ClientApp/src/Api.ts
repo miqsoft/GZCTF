@@ -348,6 +348,8 @@ export interface ProfileUserInfoModel {
   stdNumber?: string | null;
   /** Avatar URL */
   avatar?: string | null;
+  /** Grants self-service game creation and management */
+  canManageGames?: boolean;
 }
 
 /** Global configuration update */
@@ -479,6 +481,8 @@ export interface UserInfoModel {
   role?: Role | null;
   /** Is email confirmed (can log in) */
   emailConfirmed?: boolean | null;
+  /** Grants self-service game creation and management */
+  canManageGames?: boolean | null;
 }
 
 /** Batch user creation (Admin) */
@@ -520,6 +524,8 @@ export interface UserCreateModel {
    * @maxLength 20
    */
   teamName?: string | null;
+  /** Grants self-service game creation and management */
+  canManageGames?: boolean;
 }
 
 /** List response */
@@ -627,6 +633,8 @@ export interface AdminUserInfoModel {
   emailConfirmed?: boolean | null;
   /** User role */
   role?: Role | null;
+  /** Grants self-service game creation and management */
+  canManageGames?: boolean | null;
 }
 
 /** Log information (Admin) */
@@ -997,6 +1005,21 @@ export interface ArrayResponseOfGameInfoModel {
    * @format int32
    */
   total?: number;
+}
+
+/**
+ * A user with scoped admin access to a game (Edit) - deliberately minimal, exposing only
+ * what a game-scoped manager needs to manage their own game's admin list, not the full PII
+ * surface of UserInfoModel
+ */
+export interface GameAdminInfoModel {
+  /**
+   * User ID
+   * @format guid
+   */
+  id?: string;
+  /** Username */
+  userName?: string;
 }
 
 /**
@@ -3624,7 +3647,7 @@ export class Api<
       }),
 
     /**
-     * @description Adding a game requires administrator privileges
+     * @description Adding a game requires administrator privileges, or a user granted self-service game management; the creator is automatically granted scoped admin access to their own game
      *
      * @tags Edit
      * @name EditAddGame
@@ -3974,6 +3997,77 @@ export class Api<
     ) => mutate<GameInfoModel>(`/api/edit/games/${id}`, data, options),
 
     /**
+     * @description Checking a user's scoped game admin grant requires global administrator privileges, or scoped admin access to this same game
+     *
+     * @tags Edit
+     * @name EditGetGameAdmin
+     * @summary Check Game Admin
+     * @request GET:/api/edit/games/{id}/admins/{userId}
+     */
+    editGetGameAdmin: (
+      id: number,
+      userId: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, RequestResponse>({
+        path: `/api/edit/games/${id}/admins/${userId}`,
+        method: "GET",
+        ...params,
+      }),
+
+    /**
+     * @description Retrieving the list of scoped admins for a game requires global administrator privileges, or scoped admin access to this same game
+     *
+     * @tags Edit
+     * @name EditGetGameAdmins
+     * @summary Get Game Admins
+     * @request GET:/api/edit/games/{id}/admins
+     */
+    editGetGameAdmins: (id: number, params: RequestParams = {}) =>
+      this.request<GameAdminInfoModel[], RequestResponse>({
+        path: `/api/edit/games/${id}/admins`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+    /**
+     * @description Retrieving the list of scoped admins for a game requires global administrator privileges, or scoped admin access to this same game
+     *
+     * @tags Edit
+     * @name EditGetGameAdmins
+     * @summary Get Game Admins
+     * @request GET:/api/edit/games/{id}/admins
+     */
+    useEditGetGameAdmins: (
+      id: number,
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<GameAdminInfoModel[], RequestResponse>(
+        doFetch ? `/api/edit/games/${id}/admins` : null,
+        options,
+      ),
+
+    /**
+     * @description Retrieving the list of scoped admins for a game requires global administrator privileges, or scoped admin access to this same game
+     *
+     * @tags Edit
+     * @name EditGetGameAdmins
+     * @summary Get Game Admins
+     * @request GET:/api/edit/games/{id}/admins
+     */
+    mutateEditGetGameAdmins: (
+      id: number,
+      data?: GameAdminInfoModel[] | Promise<GameAdminInfoModel[]>,
+      options?: MutatorOptions,
+    ) =>
+      mutate<GameAdminInfoModel[]>(
+        `/api/edit/games/${id}/admins`,
+        data,
+        options,
+      ),
+
+    /**
      * @description Retrieving a game challenge requires administrator privileges
      *
      * @tags Edit
@@ -4216,6 +4310,67 @@ export class Api<
       ),
 
     /**
+     * @description Retrieves the games the current user has been granted scoped admin access to
+     *
+     * @tags Edit
+     * @name EditGetMyGames
+     * @summary Get My Games
+     * @request GET:/api/edit/games/mine
+     */
+    editGetMyGames: (params: RequestParams = {}) =>
+      this.request<GameInfoModel[], RequestResponse>({
+        path: `/api/edit/games/mine`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+    /**
+     * @description Retrieves the games the current user has been granted scoped admin access to
+     *
+     * @tags Edit
+     * @name EditGetMyGames
+     * @summary Get My Games
+     * @request GET:/api/edit/games/mine
+     */
+    useEditGetMyGames: (options?: SWRConfiguration, doFetch: boolean = true) =>
+      useSWR<GameInfoModel[], RequestResponse>(
+        doFetch ? `/api/edit/games/mine` : null,
+        options,
+      ),
+
+    /**
+     * @description Retrieves the games the current user has been granted scoped admin access to
+     *
+     * @tags Edit
+     * @name EditGetMyGames
+     * @summary Get My Games
+     * @request GET:/api/edit/games/mine
+     */
+    mutateEditGetMyGames: (
+      data?: GameInfoModel[] | Promise<GameInfoModel[]>,
+      options?: MutatorOptions,
+    ) => mutate<GameInfoModel[]>(`/api/edit/games/mine`, data, options),
+
+    /**
+     * @description Granting scoped game admin access requires global administrator privileges, or existing scoped admin access to this same game - letting managers share their own games with other users. A grant is always scoped to this one game; it never confers global privileges or access to any other game
+     *
+     * @tags Edit
+     * @name EditGrantGameAdmin
+     * @summary Grant Game Admin
+     * @request POST:/api/edit/games/{id}/admins/{userId}
+     */
+    editGrantGameAdmin: (
+      id: number,
+      userId: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, RequestResponse>({
+        path: `/api/edit/games/${id}/admins/${userId}`,
+        method: "POST",
+        ...params,
+      }),
+
+    /**
      * @description Import game from a ZIP package; requires Admin permission
      *
      * @tags Edit
@@ -4238,6 +4393,64 @@ export class Api<
         format: "json",
         ...params,
       }),
+
+    /**
+     * @description Resolves a username to a user ID, for use when granting scoped game admin access; requires global administrator privileges, or scoped admin access to this same game. Scoped to a game route so a manager can only resolve usernames while managing a game they already administer, rather than exposing a general user lookup
+     *
+     * @tags Edit
+     * @name EditLookupUserByName
+     * @summary Look Up User By Username
+     * @request GET:/api/edit/games/{id}/admins/lookup/{userName}
+     */
+    editLookupUserByName: (
+      id: number,
+      userName: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<GameAdminInfoModel, RequestResponse>({
+        path: `/api/edit/games/${id}/admins/lookup/${userName}`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+    /**
+     * @description Resolves a username to a user ID, for use when granting scoped game admin access; requires global administrator privileges, or scoped admin access to this same game. Scoped to a game route so a manager can only resolve usernames while managing a game they already administer, rather than exposing a general user lookup
+     *
+     * @tags Edit
+     * @name EditLookupUserByName
+     * @summary Look Up User By Username
+     * @request GET:/api/edit/games/{id}/admins/lookup/{userName}
+     */
+    useEditLookupUserByName: (
+      id: number,
+      userName: string,
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<GameAdminInfoModel, RequestResponse>(
+        doFetch ? `/api/edit/games/${id}/admins/lookup/${userName}` : null,
+        options,
+      ),
+
+    /**
+     * @description Resolves a username to a user ID, for use when granting scoped game admin access; requires global administrator privileges, or scoped admin access to this same game. Scoped to a game route so a manager can only resolve usernames while managing a game they already administer, rather than exposing a general user lookup
+     *
+     * @tags Edit
+     * @name EditLookupUserByName
+     * @summary Look Up User By Username
+     * @request GET:/api/edit/games/{id}/admins/lookup/{userName}
+     */
+    mutateEditLookupUserByName: (
+      id: number,
+      userName: string,
+      data?: GameAdminInfoModel | Promise<GameAdminInfoModel>,
+      options?: MutatorOptions,
+    ) =>
+      mutate<GameAdminInfoModel>(
+        `/api/edit/games/${id}/admins/lookup/${userName}`,
+        data,
+        options,
+      ),
 
     /**
      * @description Deleting a game challenge flag requires administrator privileges
@@ -4275,6 +4488,25 @@ export class Api<
     ) =>
       this.request<void, RequestResponse>({
         path: `/api/edit/games/${id}/challenges/${cId}`,
+        method: "DELETE",
+        ...params,
+      }),
+
+    /**
+     * @description Revoking scoped game admin access requires global administrator privileges, or existing scoped admin access to this same game
+     *
+     * @tags Edit
+     * @name EditRevokeGameAdmin
+     * @summary Revoke Game Admin
+     * @request DELETE:/api/edit/games/{id}/admins/{userId}
+     */
+    editRevokeGameAdmin: (
+      id: number,
+      userId: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, RequestResponse>({
+        path: `/api/edit/games/${id}/admins/${userId}`,
         method: "DELETE",
         ...params,
       }),

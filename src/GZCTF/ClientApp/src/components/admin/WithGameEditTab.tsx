@@ -1,6 +1,7 @@
 import { Button, Group, GroupProps, LoadingOverlay, Stack, Tabs } from '@mantine/core'
 import {
   mdiAccountGroupOutline,
+  mdiAccountKeyOutline,
   mdiBullhornOutline,
   mdiFileDocumentCheckOutline,
   mdiFlagOutline,
@@ -14,6 +15,8 @@ import { useTranslation } from 'react-i18next'
 import { useLocation, Link, useNavigate, useParams } from 'react-router'
 import { AdminPage } from '@Components/admin/AdminPage'
 import { DEFAULT_LOADING_OVERLAY } from '@Utils/Shared'
+import { useUserRole } from '@Hooks/useUser'
+import { Role } from '@Api'
 import misc from '@Styles/Misc.module.css'
 
 export interface GameEditTabProps extends React.PropsWithChildren {
@@ -22,6 +25,8 @@ export interface GameEditTabProps extends React.PropsWithChildren {
   contentPos?: React.CSSProperties['justifyContent']
   isLoading?: boolean
   backUrl?: string
+  /** Allows self-service managers (UserInfo.CanManageGames) onto this game's edit tabs */
+  allowManager?: boolean
 }
 
 export const WithGameEditTab: FC<GameEditTabProps> = ({
@@ -30,21 +35,31 @@ export const WithGameEditTab: FC<GameEditTabProps> = ({
   contentPos,
   head,
   backUrl,
+  allowManager,
   ...others
 }) => {
   const navigate = useNavigate()
   const location = useLocation()
   const { id } = useParams()
   const { t } = useTranslation()
+  const { role } = useUserRole()
 
-  const pages = [
+  const allPages = [
     { icon: mdiTextBoxOutline, title: t('admin.tab.games.info'), path: 'info' },
     { icon: mdiBullhornOutline, title: t('admin.tab.games.notices'), path: 'notices' },
     { icon: mdiFlagOutline, title: t('admin.tab.games.challenges'), path: 'challenges' },
     { icon: mdiTagOutline, title: t('admin.tab.games.divisions'), path: 'divisions' },
     { icon: mdiAccountGroupOutline, title: t('admin.tab.games.review'), path: 'review' },
     { icon: mdiFileDocumentCheckOutline, title: t('admin.tab.games.writeups'), path: 'writeups' },
+    { icon: mdiAccountKeyOutline, title: t('admin.tab.games.admins'), path: 'admins' },
   ]
+  // "review" and "writeups" call AdminController actions that stay global-Admin-only
+  // (team participation review, writeup collection) - hide them from managers rather
+  // than showing a tab whose every action would 403.
+  const pages =
+    allowManager && role !== Role.Admin
+      ? allPages.filter((p) => p.path !== 'review' && p.path !== 'writeups')
+      : allPages
 
   const getTab = (path: string) => pages.find((page) => path.includes(page.path))
 
@@ -62,6 +77,7 @@ export const WithGameEditTab: FC<GameEditTabProps> = ({
   return (
     <AdminPage
       {...others}
+      allowManager={allowManager}
       head={
         <>
           <Button
