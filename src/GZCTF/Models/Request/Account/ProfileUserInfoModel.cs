@@ -50,6 +50,11 @@ public class ProfileUserInfoModel
     /// </summary>
     public string? Avatar { get; set; }
 
+    /// <summary>
+    /// Grants self-service game creation and management
+    /// </summary>
+    public bool CanManageGames { get; set; }
+
     internal static ProfileUserInfoModel FromUserInfo(UserInfo user) =>
         new()
         {
@@ -61,6 +66,7 @@ public class ProfileUserInfoModel
             Phone = user.PhoneNumber,
             Avatar = user.AvatarUrl,
             StdNumber = user.StdNumber,
-            Role = user.Role
+            Role = user.Role,
+            CanManageGames = user.CanManageGames
         };
 }

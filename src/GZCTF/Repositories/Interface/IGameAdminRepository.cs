@@ -36,4 +36,12 @@ public interface IGameAdminRepository : IRepository
     /// <param name="token"></param>
     /// <returns></returns>
     Task<int[]> GetGameIdsForUser(Guid userId, CancellationToken token = default);
+
+    /// <summary>
+    /// Get the users granted scoped admin access to a game
+    /// </summary>
+    /// <param name="gameId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<UserInfo[]> GetAdmins(int gameId, CancellationToken token = default);
 }

@@ -243,6 +243,52 @@ public class EditController(
     }
 
     /// <summary>
+    /// Get Game Admins
+    /// </summary>
+    /// <remarks>
+    /// Retrieving the list of scoped admins for a game requires global administrator
+    /// privileges, or scoped admin access to this same game
+    /// </remarks>
+    /// <param name="id"></param>
+    /// <param name="token"></param>
+    /// <response code="200">Successfully retrieved the game's scoped admins</response>
+    [RequireGameAdmin]
+    [HttpGet("Games/{id:int}/Admins")]
+    [ProducesResponseType(typeof(GameAdminInfoModel[]), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetGameAdmins([FromRoute] int id, CancellationToken token) =>
+        Ok((await gameAdminRepository.GetAdmins(id, token)).Select(GameAdminInfoModel.FromUserInfo));
+
+    /// <summary>
+    /// Look Up User By Username
+    /// </summary>
+    /// <remarks>
+    /// Resolves a username to a user ID, for use when granting scoped game admin access;
+    /// requires global administrator privileges, or scoped admin access to this same game.
+    /// Scoped to a game route so a manager can only resolve usernames while managing a game
+    /// they already administer, rather than exposing a general user lookup
+    /// </remarks>
+    /// <param name="id"></param>
+    /// <param name="userName"></param>
+    /// <param name="token"></param>
+    /// <response code="200">Successfully resolved the username</response>
+    /// <response code="404">No such user</response>
+    [RequireGameAdmin]
+    [HttpGet("Games/{id:int}/Admins/Lookup/{userName}")]
+    [ProducesResponseType(typeof(GameAdminInfoModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> LookupUserByName([FromRoute] int id, [FromRoute] string userName,
+        CancellationToken token)
+    {
+        var user = await userManager.FindByNameAsync(userName);
+
+        if (user is null)
+            return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Admin_UserNotFound)],
+                StatusCodes.Status404NotFound));
+
+        return Ok(GameAdminInfoModel.FromUserInfo(user));
+    }
+
+    /// <summary>
     /// Check Game Admin
     /// </summary>
     /// <remarks>

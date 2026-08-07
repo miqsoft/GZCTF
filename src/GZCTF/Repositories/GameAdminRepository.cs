@@ -39,4 +39,7 @@ public class GameAdminRepository(AppDbContext context) : RepositoryBase(context)
 
     public Task<int[]> GetGameIdsForUser(Guid userId, CancellationToken token = default) =>
         Context.GameAdmins.Where(a => a.UserId == userId).Select(a => a.GameId).ToArrayAsync(token);
+
+    public Task<UserInfo[]> GetAdmins(int gameId, CancellationToken token = default) =>
+        Context.GameAdmins.Where(a => a.GameId == gameId).Select(a => a.User).ToArrayAsync(token);
 }
